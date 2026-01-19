@@ -16,46 +16,51 @@ public class Menu
     {
         while (true)
         {
-            Console.WriteLine("\n--- Todo-appen ---");
-            Console.WriteLine("1. Visa alla todos");
-            Console.WriteLine("2. Lägg till todo");
-            Console.WriteLine("3. Markera som klar");
+            Console.WriteLine("\n--- Todo-application ---");
+            Console.WriteLine("1. List all todos");
+            Console.WriteLine("2. Add new todo");
+            Console.WriteLine("3. Mark a todo as completed");
             Console.WriteLine("4. Ta bort todo");
             Console.WriteLine("5. Update todo");
             Console.WriteLine("6. Archive todo");
-            Console.WriteLine("7. Avsluta");
-            Console.Write("Välj: ");
+            Console.WriteLine("7. See todo details");
+            Console.WriteLine("8. Finish");
+            Console.Write("Choose an option: ");
             var choice = Console.ReadLine();
 
             switch (choice)
             {
                 case "1":
-                    // Lista alla todos
+                    // List all
                     await _toDoAppService.GetTodos();
 
                     break;
                 case "2":
-                    // Lägg till ny todo
+                    // Add new
                     await _toDoAppService.AddTodo();
 
                     break;
                 case "3":
-                    // Markera en todo som klar
+                    // Mark as done
                     await _toDoAppService.CompleteTodo();
                     break;
                 case "4":
-                    // Ta bort en todo
+                    // Delete 
                     await _toDoAppService.DeleteTodo();
                     break;
                 case "5":
-                    // Update en todo
+                    // Update 
                     await _toDoAppService.UpdateTodo();
                     break;
                 case "6":
-                    // Archive en todo
+                    // Archive
                     await _toDoAppService.ArchiveTodo();
                     break;
                 case "7":
+                    // Get details
+                    await _toDoAppService.GetToDoDetails();
+                    break;
+                case "8":
                     return;
             }
         }

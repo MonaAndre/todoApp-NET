@@ -159,7 +159,7 @@ public class ToDoAppService
                 {
                     foundTodo.ComplitedAt = null;
                 }
-                
+
 
                 await _context.SaveChangesAsync();
                 Console.WriteLine("Status updated.");
@@ -249,6 +249,30 @@ public class ToDoAppService
 
             foundToDo!.IsArchived = true;
             await _context.SaveChangesAsync();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+
+    public async Task GetToDoDetails()
+    {
+        try
+        {
+            Console.Write("Todo ID to get details: ");
+            var todoId = int.Parse(Console.ReadLine());
+            var foundTodo = await _context.Todos.FirstOrDefaultAsync(u => u.Id == todoId);
+            if (foundTodo == null)
+            {
+                Console.WriteLine("to do does not exist");
+            }
+            Console.WriteLine($"{foundTodo!.Title} - {foundTodo.IsComplete}");
+            Console.WriteLine($"{foundTodo.Description}");
+            Console.WriteLine($"{foundTodo.DueDate?.ToShortDateString()}");
+            Console.WriteLine($"{foundTodo.Category}");
+            
         }
         catch (Exception e)
         {
