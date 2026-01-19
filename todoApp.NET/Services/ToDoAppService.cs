@@ -5,20 +5,13 @@ using todoApp.NET.Models;
 
 namespace todoApp.NET.Services;
 
-public class ToDoAppService
+public class ToDoAppService(ToDoAppContext context)
 {
-    private readonly ToDoAppContext _context;
-
-    public ToDoAppService(ToDoAppContext context)
-    {
-        _context = context;
-    }
-
     public async Task GetTodos()
     {
         try
         {
-            var todolist = await _context.Todos.ToListAsync();
+            var todolist = await context.Todos.ToListAsync();
             if (todolist.Count == 0)
             {
                 Console.WriteLine("To Do list is empty");
@@ -28,6 +21,7 @@ public class ToDoAppService
             {
                 Console.WriteLine(todo.Title);
                 Console.WriteLine(todo.IsComplete ? "completed" : "not completed");
+                Console.WriteLine("-----------------------");
             }
         }
         catch (Exception e)
@@ -39,130 +33,156 @@ public class ToDoAppService
 
     public async Task AddTodo()
     {
-        string title;
-        while (true)
+        try
         {
-            Console.Write("Title: ");
-            title = (Console.ReadLine() ?? "").Trim();
-
-            if (title.Length == 0)
+            string title;
+            while (true)
             {
-                Console.WriteLine("Title kan inte vara tom.");
-                continue;
-            }
+                Console.Write("Title: ");
+                title = (Console.ReadLine() ?? "").Trim();
 
-            if (title.Length > 100)
-            {
-                Console.WriteLine("Title får vara max 100 tecken.");
-                continue;
-            }
+                if (title.Length == 0)
+                {
+                    Console.WriteLine("Title kan inte vara tom.");
+                    continue;
+                }
 
-            break;
-        }
+                if (title.Length > 100)
+                {
+                    Console.WriteLine("Title får vara max 100 tecken.");
+                    continue;
+                }
 
-        string? description;
-        while (true)
-        {
-            Console.Write("Description: ");
-            description = (Console.ReadLine() ?? "").Trim();
-
-            if (description.Length == 0)
-            {
-                Console.WriteLine("Description är obligatorisk.");
-                continue;
-            }
-
-            if (description.Length > 500)
-            {
-                Console.WriteLine("Description får vara max 500 tecken.");
-                continue;
-            }
-
-            break;
-        }
-
-        DateTime? dueDate = null;
-        while (true)
-        {
-            Console.Write("Due Date (yyyy-MM-dd, valfritt): ");
-            var input = (Console.ReadLine() ?? "").Trim();
-
-            if (input.Length == 0)
-            {
-                dueDate = null;
                 break;
             }
 
-            if (!DateTime.TryParseExact(input, "yyyy-MM-dd", CultureInfo.InvariantCulture,
-                    DateTimeStyles.None, out var parsed))
+            string? description;
+            while (true)
             {
-                Console.WriteLine("Ogiltigt datum. Använd format yyyy-MM-dd (t.ex. 2026-01-19).");
-                continue;
+                Console.Write("Description: ");
+                description = (Console.ReadLine() ?? "").Trim();
+
+                if (description.Length == 0)
+                {
+                    Console.WriteLine("Description är obligatorisk.");
+                    continue;
+                }
+
+                if (description.Length > 500)
+                {
+                    Console.WriteLine("Description får vara max 500 tecken.");
+                    continue;
+                }
+
+                break;
             }
 
-            dueDate = DateTime.SpecifyKind(parsed.Date, DateTimeKind.Utc);
-            break;
-        }
-
-        string category;
-        while (true)
-        {
-            Console.Write("Category (default: general): ");
-            var input = Console.ReadLine();
-
-            category = string.IsNullOrWhiteSpace(input)
-                ? "general"
-                : input.Trim();
-
-            if (category.Length > 50)
+            DateTime? dueDate = null;
+            while (true)
             {
-                Console.WriteLine("Category får vara max 50 tecken.");
-                continue;
+                Console.Write("Due Date (yyyy-MM-dd, valfritt): ");
+                var input = (Console.ReadLine() ?? "").Trim();
+
+                if (input.Length == 0)
+                {
+                    dueDate = null;
+                    break;
+                }
+
+                if (!DateTime.TryParseExact(input, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                        DateTimeStyles.None, out var parsed))
+                {
+                    Console.WriteLine("Ogiltigt datum. Använd format yyyy-MM-dd (t.ex. 2026-01-19).");
+                    continue;
+                }
+
+                dueDate = DateTime.SpecifyKind(parsed.Date, DateTimeKind.Utc);
+                break;
             }
 
-            break;
+            string category;
+            while (true)
+            {
+                Console.Write("Category (default: general): ");
+                var input = Console.ReadLine();
+
+                category = string.IsNullOrWhiteSpace(input)
+                    ? "general"
+                    : input.Trim();
+
+                if (category.Length > 50)
+                {
+                    Console.WriteLine("Category får vara max 50 tecken.");
+                    continue;
+                }
+
+                break;
+            }
+
+            var newToDo = new ToDoItem
+            {
+                Title = title,
+                Description = description,
+                Category = category,
+                IsComplete = false,
+                CreatedAt = DateTime.UtcNow,
+                DueDate = dueDate
+            };
+
+            await context.Todos.AddAsync(newToDo);
+            var result = await context.SaveChangesAsync();
+
+            Console.WriteLine(result > 0
+                ? $"To do added: {newToDo.Title}"
+                : "Failed to add new to do");
         }
-
-        var newToDo = new ToDoItem
+        catch (Exception e)
         {
-            Title = title,
-            Description = description,
-            Category = category,
-            IsComplete = false,
-            CreatedAt = DateTime.UtcNow,
-            DueDate = dueDate
-        };
-
-        await _context.Todos.AddAsync(newToDo);
-        var result = await _context.SaveChangesAsync();
-
-        Console.WriteLine(result > 0
-            ? $"To do added: {newToDo.Title}"
-            : "Failed to add new to do");
+            Console.WriteLine(e);
+            throw;
+        }
     }
-
 
     public async Task CompleteTodo()
     {
         try
         {
             Console.Write("Todo ID to mark as complete: ");
-            var toDoToUpdate = Console.ReadLine();
-            var foundTodo = await _context.Todos.FirstOrDefaultAsync(u => u.Id == int.Parse(toDoToUpdate!));
-            if (foundTodo == null)
+            var input = Console.ReadLine();
+
+            if (!int.TryParse(input, out var todoId))
             {
-                Console.WriteLine("to do does not exist");
+                Console.WriteLine("Ogiltigt ID.");
+                return;
             }
 
-            foundTodo!.IsComplete = true;
+            var foundTodo = await context.Todos.FirstOrDefaultAsync(t => t.Id == todoId);
+
+            if (foundTodo == null)
+            {
+                Console.WriteLine("Todo does not exist.");
+                return;
+            }
+
+            if (foundTodo.IsComplete)
+            {
+                Console.WriteLine("Todo is already completed.");
+                return;
+            }
+
+            foundTodo.IsComplete = true;
             foundTodo.ComplitedAt = DateTime.UtcNow;
             foundTodo.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+
+            var result = await context.SaveChangesAsync();
+
+            Console.WriteLine(result > 0
+                ? "Todo marked as completed."
+                : "Nothing was updated.");
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
-            throw;
+            Console.WriteLine($"Unexpected error: {e.Message}");
         }
     }
 
@@ -172,7 +192,7 @@ public class ToDoAppService
         {
             Console.Write("Todo ID to update: ");
             var toDoToUpdate = Console.ReadLine();
-            var foundTodo = await _context.Todos.FirstOrDefaultAsync(u => u.Id == int.Parse(toDoToUpdate!));
+            var foundTodo = await context.Todos.FirstOrDefaultAsync(u => u.Id == int.Parse(toDoToUpdate!));
             if (foundTodo == null)
             {
                 Console.WriteLine("to do does not exist");
@@ -212,7 +232,7 @@ public class ToDoAppService
                 }
 
 
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 Console.WriteLine("Status updated.");
             }
             else
@@ -237,7 +257,7 @@ public class ToDoAppService
             if (inputArch?.Trim().ToLower() == "y")
             {
                 foundTodo.IsArchived = !foundTodo.IsArchived;
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 Console.WriteLine("Archive status updated.");
             }
             else
@@ -247,7 +267,7 @@ public class ToDoAppService
 
             foundTodo.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
         }
         catch (Exception e)
         {
@@ -261,15 +281,22 @@ public class ToDoAppService
         try
         {
             Console.Write("Todo ID to delete: ");
-            var todoToDelete = Console.ReadLine();
-            var foundTodo = await _context.Todos.FirstOrDefaultAsync(u => u.Id == int.Parse(todoToDelete!));
-            if (foundTodo == null)
+            var input = Console.ReadLine();
+            if (!int.TryParse(input, out var todoId))
             {
-                Console.WriteLine("to do does not exist");
+                Console.WriteLine("Ogiltigt ID.");
+                return;
             }
 
-            _context.Todos.Remove(foundTodo!);
-            var result = await _context.SaveChangesAsync();
+            var foundTodo = await context.Todos.FirstOrDefaultAsync(u => u.Id == todoId);
+            if (foundTodo == null)
+            {
+                Console.WriteLine("Todo does not exist");
+                return;
+            }
+
+            context.Todos.Remove(foundTodo!);
+            var result = await context.SaveChangesAsync();
             if (result > 0)
             {
                 Console.WriteLine("Deleted successfully.");
@@ -291,15 +318,31 @@ public class ToDoAppService
         try
         {
             Console.WriteLine("To do ID to archive: ");
-            var toDoToArchive = Console.ReadLine();
-            var foundToDo = await _context.Todos.FirstOrDefaultAsync(u => u.Id == int.Parse(toDoToArchive!));
+
+            var input = Console.ReadLine();
+            if (!int.TryParse(input, out var todoId))
+            {
+                Console.WriteLine("Ogiltigt ID.");
+                return;
+            }
+
+            var foundToDo = await context.Todos.FirstOrDefaultAsync(u => u.Id == todoId);
             if (foundToDo == null)
             {
                 Console.WriteLine("to do does not exist");
+                return;
             }
 
             foundToDo!.IsArchived = true;
-            await _context.SaveChangesAsync();
+            var result = await context.SaveChangesAsync();
+            if (result > 0)
+            {
+                Console.WriteLine("Archive status updated.");
+            }
+            else
+            {
+                Console.WriteLine("failed to archive");
+            }
         }
         catch (Exception e)
         {
@@ -313,8 +356,14 @@ public class ToDoAppService
         try
         {
             Console.Write("Todo ID to get details: ");
-            var todoId = int.Parse(Console.ReadLine());
-            var foundTodo = await _context.Todos.FirstOrDefaultAsync(u => u.Id == todoId);
+            var input = Console.ReadLine();
+            if (!int.TryParse(input, out var todoId))
+            {
+                Console.WriteLine("Ogiltigt ID.");
+                return;
+            }
+
+            var foundTodo = await context.Todos.FirstOrDefaultAsync(u => u.Id == todoId);
             if (foundTodo == null)
             {
                 Console.WriteLine("to do does not exist");
