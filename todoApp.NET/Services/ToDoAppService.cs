@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using todoApp.NET.Data;
 using todoApp.NET.Models;
@@ -38,58 +39,108 @@ public class ToDoAppService
 
     public async Task AddTodo()
     {
-        try
+        string title;
+        while (true)
         {
             Console.Write("Title: ");
-            var title = Console.ReadLine();
+            title = (Console.ReadLine() ?? "").Trim();
 
+            if (title.Length == 0)
+            {
+                Console.WriteLine("Title kan inte vara tom.");
+                continue;
+            }
+
+            if (title.Length > 100)
+            {
+                Console.WriteLine("Title får vara max 100 tecken.");
+                continue;
+            }
+
+            break;
+        }
+
+        string? description;
+        while (true)
+        {
             Console.Write("Description: ");
-            var description = Console.ReadLine();
+            description = (Console.ReadLine() ?? "").Trim();
 
-            Console.Write("Due Date (yyyy-mm-dd): ");
+            if (description.Length == 0)
+            {
+                Console.WriteLine("Description är obligatorisk.");
+                continue;
+            }
+
+            if (description.Length > 500)
+            {
+                Console.WriteLine("Description får vara max 500 tecken.");
+                continue;
+            }
+
+            break;
+        }
+
+        DateTime? dueDate = null;
+        while (true)
+        {
+            Console.Write("Due Date (yyyy-MM-dd, valfritt): ");
+            var input = (Console.ReadLine() ?? "").Trim();
+
+            if (input.Length == 0)
+            {
+                dueDate = null;
+                break;
+            }
+
+            if (!DateTime.TryParseExact(input, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                    DateTimeStyles.None, out var parsed))
+            {
+                Console.WriteLine("Ogiltigt datum. Använd format yyyy-MM-dd (t.ex. 2026-01-19).");
+                continue;
+            }
+
+            dueDate = DateTime.SpecifyKind(parsed.Date, DateTimeKind.Utc);
+            break;
+        }
+
+        string category;
+        while (true)
+        {
+            Console.Write("Category (default: general): ");
             var input = Console.ReadLine();
 
-            if (!DateTime.TryParse(input, out var parsedDueDate))
-            {
-                Console.WriteLine("Ogiltigt datum.");
-                return;
-            }
-
-            var dueDate = DateTime.SpecifyKind(parsedDueDate, DateTimeKind.Utc);
-
-
-            Console.Write("Category: ");
-            var category = string.IsNullOrWhiteSpace(Console.ReadLine())
+            category = string.IsNullOrWhiteSpace(input)
                 ? "general"
-                : Console.ReadLine()!.Trim();
+                : input.Trim();
 
+            if (category.Length > 50)
+            {
+                Console.WriteLine("Category får vara max 50 tecken.");
+                continue;
+            }
 
-            var newToDo = new ToDoItem
-            {
-                Title = title?.Trim() ?? "",
-                Description = description?.Trim() ?? "",
-                IsComplete = false,
-                DueDate = dueDate,
-                Category = category,
-                CreatedAt = DateTime.UtcNow
-            };
-            await _context.Todos.AddAsync(newToDo);
-            var result = await _context.SaveChangesAsync();
-            if (result > 0)
-            {
-                Console.WriteLine($"to do added: {newToDo.Title}");
-            }
-            else
-            {
-                Console.WriteLine("failed to add new to do");
-            }
+            break;
         }
-        catch (Exception e)
+
+        var newToDo = new ToDoItem
         {
-            Console.WriteLine(e);
-            throw;
-        }
+            Title = title,
+            Description = description,
+            Category = category,
+            IsComplete = false,
+            CreatedAt = DateTime.UtcNow,
+            DueDate = dueDate
+        };
+
+        await _context.Todos.AddAsync(newToDo);
+        var result = await _context.SaveChangesAsync();
+
+        Console.WriteLine(result > 0
+            ? $"To do added: {newToDo.Title}"
+            : "Failed to add new to do");
     }
+
 
     public async Task CompleteTodo()
     {
@@ -268,11 +319,11 @@ public class ToDoAppService
             {
                 Console.WriteLine("to do does not exist");
             }
+
             Console.WriteLine($"{foundTodo!.Title} - {foundTodo.IsComplete}");
             Console.WriteLine($"{foundTodo.Description}");
             Console.WriteLine($"{foundTodo.DueDate?.ToShortDateString()}");
             Console.WriteLine($"{foundTodo.Category}");
-            
         }
         catch (Exception e)
         {
