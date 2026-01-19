@@ -1,9 +1,13 @@
-﻿namespace todoApp.NET;
+﻿using todoApp.NET.Data;
+
+namespace todoApp.NET;
 
 class Program
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
-        Console.WriteLine("Hello, World!");
+        var context = new ToDoAppContext();
+        var menu = new Menu(context);
+        await menu.OpenMenu();
     }
 }
