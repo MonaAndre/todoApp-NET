@@ -43,7 +43,8 @@ public class Menu
                     break;
                 case "4":
 // Ta bort en todo
-
+                    await _toDoAppService.DeleteTodo();
+                    break;
                 case "5":
 //
                     break;

@@ -89,5 +89,26 @@ public class ToDoAppService
         findtodo.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
     }
-    
+
+
+    public async Task DeleteTodo()
+    {
+        var todoToDelete = Console.ReadLine();
+        var findtodo = await _context.Todos.FirstOrDefaultAsync(u => u.Id == int.Parse(todoToDelete));
+        if (findtodo == null)
+        {
+            Console.WriteLine("to do does not exist");
+        }
+
+        _context.Todos.Remove(findtodo);
+        var result = _context.SaveChanges();
+        if (result > 0)
+        {
+            Console.WriteLine($"to do deleted: {findtodo.Title}");
+        }
+        else
+        {
+            Console.WriteLine("failed to delete");
+        }
+    }
 }
