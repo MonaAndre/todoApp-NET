@@ -66,7 +66,7 @@ public class Menu
                     break;
                 case "8":
                     // öppna undermenu för rapports
-                  await  OpenRapportMenu();
+                    await OpenRapportMenu();
                     break;
                 case "9":
                     return;
@@ -79,10 +79,17 @@ public class Menu
         while (true)
         {
             Console.WriteLine("\n--- Rapports menu ---");
+            Console.WriteLine(" Filtering and sorting todos");
+            Console.WriteLine("------------------------------");
             Console.WriteLine("1.Aktiv vy (filter + sortering)");
             Console.WriteLine("2. Show not completed late todos");
             Console.WriteLine("3. Show todos with upcoming deadlines");
-            Console.WriteLine("4. Tillbaka ");
+            Console.WriteLine(" Summary");
+            Console.WriteLine("------------------------------");
+            Console.WriteLine("4. Summary for each category");
+            Console.WriteLine("5. Category top-list");
+
+            Console.WriteLine("6. Tillbaka ");
             Console.Write("Choose an option: ");
             var choice = Console.ReadLine();
             switch (choice)
@@ -101,6 +108,14 @@ public class Menu
                     await _rapportsService.ShowUpcomingDeadlines(daysAhead);
                     break;
                 case "4":
+                    await _rapportsService.ShowSummaryForCategories();
+                    break;
+                case "5":
+                    Console.WriteLine("Chose limit");
+                    var limit = int.Parse(Console.ReadLine());
+                    await _rapportsService.ShowTopListCat(limit);
+                    break;
+                case "6":
                     return;
             }
         }

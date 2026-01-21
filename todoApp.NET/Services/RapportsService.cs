@@ -161,4 +161,71 @@ public class RapportsService(ToDoAppContext context)
             );
         }
     }
+
+    public async Task ShowSummaryForCategories()
+    {
+        var now = DateTime.UtcNow;
+        var summary = await context.Todos
+            .AsNoTracking()
+            .Where(t => !t.IsArchived)
+            .GroupBy(t => t.Category)
+            .Select(g => new
+            {
+                Category = g.Key,
+                Total = g.Count(),
+                Completed = g.Count(t => t.IsComplete),
+                NotCompleted = g.Count(t => t.IsComplete),
+                CompletionRate = !g.Any()
+                    ? 0
+                    : (double)g.Count(t => t.IsComplete) / g.Count() * 100
+            })
+            .OrderBy(summary => summary.Category)
+            .ToListAsync();
+
+        if (summary.Count == 0)
+        {
+            Console.WriteLine("No todos found.");
+            return;
+        }
+
+        foreach (var s in summary)
+        {
+            Console.WriteLine($"Category: {s.Category}");
+            Console.WriteLine($"  Total: {s.Total}");
+            Console.WriteLine($"  Completed: {s.Completed}");
+            Console.WriteLine($"  Not completed: {s.NotCompleted}");
+            Console.WriteLine($"  Completion rate: {s.CompletionRate:F1}%");
+            Console.WriteLine("-----------------------");
+        }
+    }
+
+    public async Task ShowTopListCat(int limit)
+    {
+        var result = await context.Todos
+            .AsNoTracking()
+            .Where(t => !t.IsArchived)
+            .GroupBy(t => t.Category)
+            .Select(g => new
+                {
+                    Category = g.Key,
+                    TotalIncompleted = g.Count(t => !t.IsComplete),
+                }
+            )
+            .OrderByDescending(result => result.TotalIncompleted)
+            .Take(limit)
+            .ToListAsync();
+
+        if (result.Count == 0)
+        {
+            Console.WriteLine("No categories found.");
+        }
+        var rank = 1;
+        foreach (var item in result)
+        {
+            Console.WriteLine(
+                $"{rank}. {item.Category} | Incomplete active todos: {item.TotalIncompleted}"
+            );
+            rank++;
+        }
+    }
 }
