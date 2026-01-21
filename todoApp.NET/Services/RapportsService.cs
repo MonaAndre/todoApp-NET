@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.Mapping;
 using todoApp.NET.Data;
@@ -227,5 +229,34 @@ public class RapportsService(ToDoAppContext context)
             );
             rank++;
         }
+    }
+
+    public async Task ExportAllTodos()
+    {
+        var result = await context.Todos
+            .AsNoTracking()
+            .Where(t => !t.IsArchived)
+            .ToListAsync();
+        if (!result.Any())
+        {
+            Console.WriteLine("No todos to export.");
+            return;
+        }
+
+        var options = new JsonSerializerOptions
+        {
+            WriteIndented = true, 
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+
+        var json = JsonSerializer.Serialize(result, options);
+
+        var fileName = $"todos_export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.json";
+        var filePath = Path.Combine(Environment.CurrentDirectory, fileName);
+
+        await File.WriteAllTextAsync(filePath, json);
+
+        Console.WriteLine($"Todos exported successfully to:");
+        Console.WriteLine(filePath);
     }
 }

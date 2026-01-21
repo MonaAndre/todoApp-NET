@@ -88,8 +88,12 @@ public class Menu
             Console.WriteLine("------------------------------");
             Console.WriteLine("4. Summary for each category");
             Console.WriteLine("5. Category top-list");
+            Console.WriteLine(" Export: Save local as JSON");
+            Console.WriteLine("------------------------------");
+            Console.WriteLine("6. Export list with all todos");
+            Console.WriteLine("------------------------------");
 
-            Console.WriteLine("6. Tillbaka ");
+            Console.WriteLine("7. Tillbaka ");
             Console.Write("Choose an option: ");
             var choice = Console.ReadLine();
             switch (choice)
@@ -115,7 +119,10 @@ public class Menu
                     var limit = int.Parse(Console.ReadLine());
                     await _rapportsService.ShowTopListCat(limit);
                     break;
-                case "6":
+                case"6":
+                    await _rapportsService.ExportAllTodos();
+                    break;
+                case "7":
                     return;
             }
         }
