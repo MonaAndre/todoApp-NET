@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.Mapping;
 using todoApp.NET.Data;
 using todoApp.NET.DTOs.RapportsDTOs;
 using todoApp.NET.Models;
@@ -100,7 +101,8 @@ public class RapportsService(ToDoAppContext context)
         var currentDate = DateTime.UtcNow;
         var result = await context.Todos
             .AsNoTracking()
-            .Where(todo => todo.IsComplete == false && todo.DueDate.HasValue && todo.DueDate < currentDate).ToListAsync();
+            .Where(todo => todo.IsComplete == false && todo.DueDate.HasValue && todo.DueDate < currentDate)
+            .ToListAsync();
         if (result.Count == 0)
         {
             Console.WriteLine("Inga todos matchade dina filter.");
@@ -117,11 +119,46 @@ public class RapportsService(ToDoAppContext context)
         var status = todo.IsComplete ? "Klar" : "Ej klar";
         var dueDateText = todo.DueDate.HasValue ? todo.DueDate.Value.ToShortDateString() : "Ingen deadline";
         Console.WriteLine($"[{todo.Id}] {todo.Title}");
-    
+
         var daysLate = Math.Floor((DateTime.UtcNow - todo.DueDate!.Value).TotalDays);
         Console.WriteLine(
             $"Kategori: {todo.Category} | Status: {status} | Deadline: {dueDateText} | Late for {daysLate} days");
         Console.WriteLine(todo.Description);
         Console.WriteLine("-----------------------");
+    }
+
+
+    public async Task ShowUpcomingDeadlines(int daysAhead)
+    {
+        var currentDate = DateTime.UtcNow;
+        var to = currentDate.AddDays(daysAhead);
+        var result = await context.Todos
+            .AsNoTracking()
+            .Where(todo => !todo.IsArchived && !todo.IsComplete && todo.DueDate.HasValue &&
+                           todo.DueDate.Value >= currentDate && todo.DueDate <= to)
+            .OrderBy(todo => todo.DueDate)
+            .ToListAsync();
+
+        if (result.Count == 0)
+        {
+            Console.WriteLine("Inga aktiva todos matchade dina filter.");
+            return;
+        }
+
+        foreach (var todo in result)
+            PrintUpcoming(todo, currentDate);
+    }
+
+    private static void PrintUpcoming(ToDoItem todo, DateTime now)
+    {
+        {
+            var daysUntilDue = (int)Math.Ceiling(
+                (todo.DueDate!.Value - now).TotalDays
+            );
+
+            Console.WriteLine(
+                $"[{todo.Id}] {todo.Title} | Due in {daysUntilDue} days ({todo.DueDate:yyyy-MM-dd})"
+            );
+        }
     }
 }

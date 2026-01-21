@@ -81,7 +81,8 @@ public class Menu
             Console.WriteLine("\n--- Rapports menu ---");
             Console.WriteLine("1.Aktiv vy (filter + sortering)");
             Console.WriteLine("2. Show not completed late todos");
-            Console.WriteLine("3. Tillbaka ");
+            Console.WriteLine("3. Show todos with upcoming deadlines");
+            Console.WriteLine("4. Tillbaka ");
             Console.Write("Choose an option: ");
             var choice = Console.ReadLine();
             switch (choice)
@@ -95,6 +96,11 @@ public class Menu
                     await _rapportsService.ShowLateTodos();
                     break;
                 case "3":
+                    Console.WriteLine("Deadline in how many days from now?");
+                    var daysAhead = int.Parse(Console.ReadLine());
+                    await _rapportsService.ShowUpcomingDeadlines(daysAhead);
+                    break;
+                case "4":
                     return;
             }
         }
