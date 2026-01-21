@@ -94,4 +94,34 @@ public class RapportsService(ToDoAppContext context)
         Console.WriteLine(todo.Description);
         Console.WriteLine("-----------------------");
     }
+
+    public async Task ShowLateTodos()
+    {
+        var currentDate = DateTime.UtcNow;
+        var result = await context.Todos
+            .AsNoTracking()
+            .Where(todo => todo.IsComplete == false && todo.DueDate.HasValue && todo.DueDate < currentDate).ToListAsync();
+        if (result.Count == 0)
+        {
+            Console.WriteLine("Inga todos matchade dina filter.");
+        }
+
+        foreach (var todo in result)
+        {
+            PrintLateTodos(todo);
+        }
+    }
+
+    private static void PrintLateTodos(ToDoItem todo)
+    {
+        var status = todo.IsComplete ? "Klar" : "Ej klar";
+        var dueDateText = todo.DueDate.HasValue ? todo.DueDate.Value.ToShortDateString() : "Ingen deadline";
+        Console.WriteLine($"[{todo.Id}] {todo.Title}");
+    
+        var daysLate = Math.Floor((DateTime.UtcNow - todo.DueDate!.Value).TotalDays);
+        Console.WriteLine(
+            $"Kategori: {todo.Category} | Status: {status} | Deadline: {dueDateText} | Late for {daysLate} days");
+        Console.WriteLine(todo.Description);
+        Console.WriteLine("-----------------------");
+    }
 }

@@ -80,7 +80,8 @@ public class Menu
         {
             Console.WriteLine("\n--- Rapports menu ---");
             Console.WriteLine("1.Aktiv vy (filter + sortering)");
-            Console.WriteLine("2. Tillbaka ");
+            Console.WriteLine("2. Show not completed late todos");
+            Console.WriteLine("3. Tillbaka ");
             Console.Write("Choose an option: ");
             var choice = Console.ReadLine();
             switch (choice)
@@ -91,6 +92,9 @@ public class Menu
                     await _rapportsService.ShowActiveTodosWithFilters(res);
                     break;
                 case "2":
+                    await _rapportsService.ShowLateTodos();
+                    break;
+                case "3":
                     return;
             }
         }
